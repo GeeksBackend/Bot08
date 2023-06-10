@@ -1,0 +1,7 @@
+venv/
+env/
+config.py
+.env
+.venv
+__pycache__/
+users.db
