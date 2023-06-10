@@ -30,7 +30,7 @@ keyboard_buttons = [
     KeyboardButton('/test'),
     KeyboardButton('/mailing')
 ]
-keyboard_one = ReplyKeyboardMarkup().add(*keyboard_buttons)
+keyboard_one = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=30).add(*keyboard_buttons)
 
 @dp.message_handler(commands='start')
 async def start(message:types.Message):
