@@ -2,6 +2,7 @@ from aiogram import Bot, Dispatcher, types, executor
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.storage import FSMContext
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from config import token
 import sqlite3, time, logging
 
@@ -23,6 +24,14 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS users(
 """)
 cursor.connection.commit()
 
+keyboard_buttons = [
+    KeyboardButton('/start'),
+    KeyboardButton('/help'),
+    KeyboardButton('/test'),
+    KeyboardButton('/mailing')
+]
+keyboard_one = ReplyKeyboardMarkup().add(*keyboard_buttons)
+
 @dp.message_handler(commands='start')
 async def start(message:types.Message):
     cursor.execute(f"SELECT * FROM users WHERE user_id = {message.from_user.id};")
@@ -35,7 +44,7 @@ async def start(message:types.Message):
                     '{time.ctime()}');
                     """)
     cursor.connection.commit()
-    await message.answer(f"Привет {message.from_user.full_name}!")
+    await message.answer(f"Привет {message.from_user.full_name}!", reply_markup=keyboard_one)
 
 @dp.message_handler(commands='help')
 async def help(message:types.Message):
