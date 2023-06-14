@@ -1,7 +1,10 @@
 venv/
 env/
+audio/
+video/
 config.py
 .env
 .venv
 __pycache__/
 users.db
+youtube.db
