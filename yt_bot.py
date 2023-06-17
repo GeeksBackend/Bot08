@@ -22,6 +22,8 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS users(
     username VARCHAR(255),
     first_name VARCHAR(255),
     last_name VARCHAR(255),
+    phone VARCHAR(200),
+    email VARCHAR(200),
     created VARCHAR(100)
 );
 """)
@@ -32,7 +34,8 @@ async def start(message:types.Message):
     cursor.execute(f"SELECT * FROM users WHERE user_id = {message.from_user.id};")
     result = cursor.fetchall()
     if result == []:
-        cursor.execute(f"""INSERT INTO users VALUES ({message.from_user.id},
+        cursor.execute(f"""INSERT INTO users (user_id, chat_id, username, first_name,
+                    last_name, created) VALUES ({message.from_user.id},
                     {message.chat.id}, '{message.from_user.username}',
                     '{message.from_user.first_name}', 
                     '{message.from_user.last_name}',
@@ -40,6 +43,24 @@ async def start(message:types.Message):
                     """)
     cursor.connection.commit()
     await message.answer(f"Привет {message.from_user.full_name}!\nЯ помогу тебе скачать видео или же аудио с ютуба. Просто отправь ссылку из ютуба )")
+
+verify_buttons = [
+    KeyboardButton('Отправить номер', request_contact=True),
+    KeyboardButton('Отправить свое местоположение', request_location=True)
+]
+verify_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(*verify_buttons)
+
+@dp.message_handler(commands='verify')
+async def verify_user(message:types.Message):
+    await message.answer('Для верификации отправьте свой номер телефона', reply_markup=verify_keyboard)
+
+@dp.message_handler(content_types=types.ContentType.CONTACT)
+async def get_phone_number(messsage:types.Message):
+    await messsage.answer(f"{messsage.contact.phone_number}")
+    cursor.execute(f"""UPDATE users SET phone = {messsage.contact.phone_number} 
+                   WHERE user_id = {messsage.from_user.id};""")
+    cursor.connection.commit()
+    await messsage.answer("Ваш номер телефона успешно записан")
 
 format_buttons = [
     KeyboardButton('Mp3'),
@@ -67,11 +88,32 @@ async def download(message:types.Message, state:FSMContext):
     yt = YouTube(url['url'], use_oauth=True)
     if message.text == 'Mp3':
         await message.answer("Скачиваем аудио, ожидайте...")
-        yt.streams.filter(only_audio=True).first().download('audio', f'{yt.title}.mp3')
-        await message.answer("Скачалось, отправляю...")
-        with open(f'audio/{yt.title}.mp3', 'rb') as audio:
-            await bot.send_audio(message.chat.id, audio)
+        try:
+            yt.streams.filter(only_audio=True).first().download('audio', f'{yt.title}.mp3')
+            await message.answer("Скачалось, отправляю...")
+            with open(f'audio/{yt.title}.mp3', 'rb') as audio:
+                await bot.send_audio(message.chat.id, audio)
+            os.remove(f'audio/{yt.title}.mp4')
+        except:
+            yt.streams.filter(only_audio=True).first().download('audio', f'{yt.author}.mp3')
+            await message.answer("Скачалось, отправляю...")
+            with open(f'audio/{yt.author}.mp3', 'rb') as audio:
+                await bot.send_audio(message.chat.id, audio)
+            os.remove(f'audio/{yt.author}.mp4')
     elif message.text == 'Mp4':
         await message.answer("Скачиваем видео...")
+        try:
+            yt.streams.filter(file_extension='mp4').first().download('video', f'{yt.title}.mp4')
+            await message.answer("Скачалось, отправляю...")
+            with open(f'video/{yt.title}.mp4', 'rb') as video:
+                await bot.send_video(message.chat.id, video)
+            os.remove(f'video/{yt.title}.mp4')
+        except:
+            yt.streams.filter(file_extension='mp4').first().download('video', f'{yt.author}.mp4')
+            await message.answer("Скачалось, отправляю...")
+            with open(f'video/{yt.author}.mp4', 'rb') as video:
+                await bot.send_video(message.chat.id, video)
+            os.remove(f'video/{yt.author}.mp4')
+    await state.finish()
 
 executor.start_polling(dp)
