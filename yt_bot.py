@@ -64,8 +64,9 @@ async def all_inline(call):
 @dp.message_handler(state=VideoState.url)
 async def get_info(message:types.Message, state:FSMContext):
     yt = YouTube(message.text, use_oauth=True)
-    await message.answer('Получаем информацию')
+    await message.answer('Получаем информацию...')
     await message.answer(f"Название: {yt.title}\nАвтор: {yt.author}\nПросмотры: {yt.views}\nДлина: {yt.length} сек")
+    await state.finish()
 
 @dp.message_handler(state=AudioState.url)
 async def download_audio(message:types.Message, state:FSMContext):
