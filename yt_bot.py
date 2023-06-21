@@ -32,6 +32,7 @@ cursor.connection.commit()
 inline_buttons = [
     InlineKeyboardButton('Скачать аудио', callback_data='audio'),
     InlineKeyboardButton('Скачать видео', callback_data='video'),
+    InlineKeyboardButton('Информация о видео', callback_data='info'),
     InlineKeyboardButton('Наш сайт', url='https://geeks.edu.kg/'),
     # InlineKeyboardButton('Оплатить', pay=True)
     # InlineKeyboardButton('Окошко', web_app='https://geeks.edu.kg/')
@@ -56,6 +57,15 @@ async def all_inline(call):
     elif call.data == 'video':
         await bot.send_message(call.message.chat.id, 'Отправьте ссылку на видео')
         await VideoState.url.set()
+    elif call.data == 'info':
+        await bot.send_message(call.message.chat.id, 'Отправьте ссылку на видео для получения информации')
+        await VideoState.url.set()
+
+@dp.message_handler(state=VideoState.url)
+async def get_info(message:types.Message, state:FSMContext):
+    yt = YouTube(message.text, use_oauth=True)
+    await message.answer('Получаем информацию')
+    await message.answer(f"Название: {yt.title}\nАвтор: {yt.author}\nПросмотры: {yt.views}\nДлина: {yt.length} сек")
 
 @dp.message_handler(state=AudioState.url)
 async def download_audio(message:types.Message, state:FSMContext):
