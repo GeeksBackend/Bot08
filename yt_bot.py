@@ -48,6 +48,7 @@ class AudioState(StatesGroup):
 
 class VideoState(StatesGroup):
     url = State()
+    info = State()
 
 @dp.callback_query_handler(lambda call: call)
 async def all_inline(call):
@@ -59,9 +60,9 @@ async def all_inline(call):
         await VideoState.url.set()
     elif call.data == 'info':
         await bot.send_message(call.message.chat.id, 'Отправьте ссылку на видео для получения информации')
-        await VideoState.url.set()
+        await VideoState.info.set()
 
-@dp.message_handler(state=VideoState.url)
+@dp.message_handler(state=VideoState.info)
 async def get_info(message:types.Message, state:FSMContext):
     yt = YouTube(message.text, use_oauth=True)
     await message.answer('Получаем информацию...')
