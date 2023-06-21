@@ -2,7 +2,7 @@ from aiogram import Bot, Dispatcher, types, executor
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.dispatcher.storage import FSMContext
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from dotenv import load_dotenv
 from pytube import YouTube
 import sqlite3, time, logging, os
@@ -29,6 +29,15 @@ cursor.execute("""CREATE TABLE IF NOT EXISTS users(
 """)
 cursor.connection.commit()
 
+inline_buttons = [
+    InlineKeyboardButton('Скачать аудио', callback_data='audio'),
+    InlineKeyboardButton('Скачать видео', callback_data='video'),
+    InlineKeyboardButton('Наш сайт', url='https://geeks.edu.kg/'),
+    # InlineKeyboardButton('Оплатить', pay=True)
+    # InlineKeyboardButton('Окошко', web_app='https://geeks.edu.kg/')
+]
+inline_keyboard = InlineKeyboardMarkup().add(*inline_buttons)
+
 @dp.message_handler(commands='start')
 async def start(message:types.Message):
     cursor.execute(f"SELECT * FROM users WHERE user_id = {message.from_user.id};")
@@ -42,7 +51,7 @@ async def start(message:types.Message):
                     '{time.ctime()}');
                     """)
     cursor.connection.commit()
-    await message.answer(f"Привет {message.from_user.full_name}!\nЯ помогу тебе скачать видео или же аудио с ютуба. Просто отправь ссылку из ютуба )")
+    await message.answer(f"Привет {message.from_user.full_name}!\nЯ помогу тебе скачать видео или же аудио с ютуба. Просто отправь ссылку из ютуба )", reply_markup=inline_keyboard)
 
 verify_buttons = [
     KeyboardButton('Отправить номер', request_contact=True),
