@@ -38,6 +38,61 @@ inline_buttons = [
 ]
 inline_keyboard = InlineKeyboardMarkup().add(*inline_buttons)
 
+class FormatState(StatesGroup):
+    url = State()
+    format_url = State()
+
+class AudioState(StatesGroup):
+    url = State()
+
+class VideoState(StatesGroup):
+    url = State()
+
+@dp.callback_query_handler(lambda call: call)
+async def all_inline(call):
+    if call.data == 'audio':
+        await bot.send_message(call.message.chat.id, 'Отправьте ссылку на аудио')
+        await AudioState.url.set()
+    elif call.data == 'video':
+        await bot.send_message(call.message.chat.id, 'Отправьте ссылку на видео')
+        await VideoState.url.set()
+
+@dp.message_handler(state=AudioState.url)
+async def download_audio(message:types.Message, state:FSMContext):
+    yt = YouTube(message.text, use_oauth=True)
+    await message.answer("Скачиваем аудио, ожидайте...")
+    try:
+        yt.streams.filter(only_audio=True).first().download('audio', f'{yt.title}.mp3')
+        await message.answer("Скачалось, отправляю...")
+        with open(f'audio/{yt.title}.mp3', 'rb') as audio:
+            await bot.send_audio(message.chat.id, audio, reply_markup=inline_keyboard)
+        os.remove(f'audio/{yt.title}.mp3')
+    except:
+        yt.streams.filter(only_audio=True).first().download('audio', f'{yt.author}.mp3')
+        await message.answer("Скачалось, отправляю...")
+        with open(f'audio/{yt.author}.mp3', 'rb') as audio:
+            await bot.send_audio(message.chat.id, audio, reply_markup=inline_keyboard)
+        os.remove(f'audio/{yt.author}.mp3')
+    await state.finish()
+
+@dp.message_handler(state=VideoState.url)
+async def download_video(message:types.Message, state:FSMContext):
+    yt = YouTube(message.text, use_oauth=True)
+    await message.answer("Скачиваем видео...")
+    try:
+        yt.streams.filter(file_extension='mp4').first().download('video', f'{yt.title}.mp4')
+        await message.answer("Скачалось, отправляю...")
+        with open(f'video/{yt.title}.mp4', 'rb') as video:
+            await bot.send_video(message.chat.id, video, reply_markup=inline_keyboard)
+        os.remove(f'video/{yt.title}.mp4')
+    except:
+        yt.streams.filter(file_extension='mp4').first().download('video', f'{yt.author}.mp4')
+        await message.answer("Скачалось, отправляю...")
+        with open(f'video/{yt.author}.mp4', 'rb') as video:
+            await bot.send_video(message.chat.id, video, reply_markup=inline_keyboard)
+        os.remove(f'video/{yt.author}.mp4')
+    await state.finish()
+
 @dp.message_handler(commands='start')
 async def start(message:types.Message):
     cursor.execute(f"SELECT * FROM users WHERE user_id = {message.from_user.id};")
@@ -78,10 +133,6 @@ format_buttons = [
 
 format_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True).add(*format_buttons)
 
-class FormatState(StatesGroup):
-    url = State()
-    format_url = State()
-
 @dp.message_handler()
 async def get_youtube_url(message:types.Message, state:FSMContext):
     if 'https://youtu.be/' in message.text:
@@ -102,13 +153,13 @@ async def download(message:types.Message, state:FSMContext):
             await message.answer("Скачалось, отправляю...")
             with open(f'audio/{yt.title}.mp3', 'rb') as audio:
                 await bot.send_audio(message.chat.id, audio)
-            os.remove(f'audio/{yt.title}.mp4')
+            os.remove(f'audio/{yt.title}.mp3')
         except:
             yt.streams.filter(only_audio=True).first().download('audio', f'{yt.author}.mp3')
             await message.answer("Скачалось, отправляю...")
             with open(f'audio/{yt.author}.mp3', 'rb') as audio:
                 await bot.send_audio(message.chat.id, audio)
-            os.remove(f'audio/{yt.author}.mp4')
+            os.remove(f'audio/{yt.author}.mp3')
     elif message.text == 'Mp4':
         await message.answer("Скачиваем видео...")
         try:
