@@ -8,3 +8,4 @@ config.py
 __pycache__/
 users.db
 youtube.db
+smtp.db
